@@ -1,6 +1,6 @@
 # PassGuard — Password Strength Analyzer
 
-PassGuard is a standalone Java Swing desktop application for locally estimating password strength and generating random password candidates. It is an educational aid, not an authentication service or a guarantee of security.
+PassGuard includes a Java Swing desktop application and a browser-compatible static web version for locally estimating password strength and generating random password candidates. Both are educational aids, not authentication services or guarantees of security.
 
 ## Abstract and introduction
 
@@ -23,12 +23,15 @@ The original implementation combined Swing UI and analysis logic in one class, u
 - Personalized suggestions and a five-item input checklist.
 - `SecureRandom` based generator, configurable from 8 to 128 characters, with optional uppercase, lowercase, digit and symbol groups. Each selected group is guaranteed to appear; positions are shuffled.
 - Clipboard copy with feedback and a warning that clipboard contents may persist.
+- Browser edition with the same three modules, a responsive glassmorphism layout and an animated canvas background.
+- Browser generation uses `crypto.getRandomValues`; the web edition has no backend, analytics, external scripts or password storage.
 
 ## Technology stack and requirements
 
 - Java 17 or later (the implementation uses modern Java APIs such as `Set.of`).
 - Swing and AWT; no runtime libraries, server, database or network access.
-- PowerShell on Windows for the included test runner, or equivalent `javac`/`java` commands.
+- Node.js 18 or later for the built-in browser logic test runner.
+- PowerShell on Windows for the included Java test runner, or equivalent `javac`/`java` commands.
 
 ## Three-page interface and architecture
 
@@ -70,6 +73,12 @@ PassGuard/
 │   └── PasswordSecurityTest.java
 ├── docs/
 │   └── PROJECT_REPORT.md
+├── web/
+│   ├── index.html
+│   ├── styles.css
+│   ├── js/
+│   └── tests/
+├── render.yaml
 ├── run-tests.ps1
 ├── README.md
 ├── SECURITY.md
@@ -89,7 +98,11 @@ java -cp target\classes PasswordAnalyzer
 
 ## Tests
 
-Run `.\run-tests.ps1` in PowerShell. The dependency-free test suite compiles the production code and checks empty and short values, single and mixed character groups, a long passphrase, common/repeated/sequential patterns, score boundaries and classifications, recommendations, generator length and category guarantees, invalid selections, and sample variation. It exercises the logic without opening a window; clipboard and visual interaction require a desktop session.
+Run `.\run-tests.ps1` in PowerShell for the Java suite and `node --test web/tests/core.test.cjs` for the browser logic suite. Both cover scoring, patterns, recommendations, and generation constraints. The web logic suite uses an injected deterministic crypto source for repeatable tests; production generation uses the browser's cryptographic random source.
+
+## Render static site
+
+The browser app is plain HTML/CSS/JavaScript in `web/` and needs no backend or package installation. `render.yaml` configures a free Render Static Site that publishes `./web` from `main`; its build command is a no-dependency readiness message. Render provides the public HTTPS URL after the service's first deploy. Security headers restrict scripts and network connections; the Content Security Policy disables outbound connections from the page.
 
 ## Limitations
 

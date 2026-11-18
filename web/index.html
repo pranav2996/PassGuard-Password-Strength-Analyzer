@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080f2c">
+  <meta name="description" content="PassGuard locally estimates password strength and generates strong password candidates in your browser.">
+  <title>PassGuard | Password Strength Analyser</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./js/core.js"></script>
+  <script defer src="./js/app.js"></script>
+</head>
+<body>
+  <canvas id="ambient" aria-hidden="true"></canvas>
+  <div class="app-shell">
+    <header class="topbar">
+      <a class="brand" href="#top" aria-label="PassGuard home">
+        <svg class="brand-mark" viewBox="0 0 48 56" aria-hidden="true"><path d="M24 3 43 11v14c0 13-7.7 22.2-19 28C12.7 47.2 5 38 5 25V11L24 3Z"/><rect x="18" y="25" width="12" height="10" rx="2"/><path d="M21 25v-4a3 3 0 0 1 6 0v4"/><circle cx="24" cy="30" r="1"/></svg>
+        <span><strong>PassGuard</strong><small>PASSWORD SECURITY CENTER</small></span>
+      </a>
+      <nav class="tabs" role="tablist" aria-label="PassGuard sections">
+        <button class="tab active" id="tab-analyser" role="tab" aria-selected="true" aria-controls="page-analyser" data-page="analyser"><span aria-hidden="true">⌕</span> Analyser</button>
+        <button class="tab" id="tab-insights" role="tab" aria-selected="false" aria-controls="page-insights" data-page="insights"><span aria-hidden="true">▤</span> Insights</button>
+        <button class="tab" id="tab-generate" role="tab" aria-selected="false" aria-controls="page-generate" data-page="generate"><span aria-hidden="true">✣</span> Generate</button>
+      </nav>
+      <div class="local-badge"><span aria-hidden="true">⬡</span> Local Analysis</div>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <svg class="hero-mark" viewBox="0 0 48 56" aria-hidden="true"><path d="M24 3 43 11v14c0 13-7.7 22.2-19 28C12.7 47.2 5 38 5 25V11L24 3Z"/><rect x="18" y="25" width="12" height="10" rx="2"/><path d="M21 25v-4a3 3 0 0 1 6 0v4"/><circle cx="24" cy="30" r="1"/></svg>
+        <h1 id="hero-title">Password Strength Analyser</h1>
+        <p>Evaluate password security and create stronger alternatives.</p>
+      </section>
+
+      <section class="page active" id="page-analyser" role="tabpanel" aria-labelledby="tab-analyser" data-page-panel="analyser">
+        <div class="grid two-column">
+          <article class="glass-card input-card">
+            <h2><span class="heading-icon">⌕</span> Analyse Your Password</h2>
+            <p class="subheading">Enter a password below to check its security strength locally.</p>
+            <form id="analysis-form" autocomplete="off">
+              <label class="field-label" for="password-input">PASSWORD</label>
+              <div class="password-wrap">
+                <input id="password-input" name="password" type="password" autocomplete="new-password" spellcheck="false" aria-describedby="local-note">
+                <button id="toggle-visibility" class="eye-button" type="button" aria-label="Show password" aria-pressed="false">◉</button>
+              </div>
+              <label class="check-row"><input id="show-password" type="checkbox"><span>Show password</span></label>
+              <div class="actions">
+                <button class="button primary" type="submit"><span aria-hidden="true">▷</span> Analyse Password</button>
+                <button class="button secondary" id="clear-analysis" type="button"><span aria-hidden="true">⟳</span> Clear</button>
+              </div>
+            </form>
+            <p class="privacy-note" id="local-note">Your password is analysed in this browser and is never sent to a server.</p>
+          </article>
+
+          <article class="glass-card strength-card" aria-live="polite">
+            <div class="card-heading-row"><div><h2><span class="heading-icon">▥</span> Strength Overview</h2><p class="subheading">Your password security score at a glance.</p></div><span class="shield-art" aria-hidden="true">✓</span></div>
+            <div class="strength-result"><strong id="strength-label">Not analysed</strong><span id="score-label">SCORE · 0 / 7</span></div>
+            <div class="meter" role="progressbar" aria-label="Password strength score" aria-valuemin="0" aria-valuemax="7" aria-valuenow="0"><span id="meter-fill"></span></div>
+            <p class="subheading meter-note">An educational estimate based on length, variety and patterns.</p>
+          </article>
+
+          <article class="glass-card checklist-card">
+            <h2><span class="heading-icon">▣</span> Security Checklist</h2>
+            <p class="subheading">Five essential password requirements.</p>
+            <ul class="checklist" id="checklist">
+              <li data-check="length8"><span class="check-icon">○</span> At least 8 characters</li>
+              <li data-check="upper"><span class="check-icon">○</span> Uppercase letter</li>
+              <li data-check="lower"><span class="check-icon">○</span> Lowercase letter</li>
+              <li data-check="digit"><span class="check-icon">○</span> Number</li>
+              <li data-check="special"><span class="check-icon">○</span> Special character</li>
+            </ul>
+          </article>
+        </div>
+      </section>
+
+      <section class="page" id="page-insights" role="tabpanel" aria-labelledby="tab-insights" data-page-panel="insights" hidden>
+        <div class="insights-header"><h2>Security Insights</h2><p>Pattern checks, score reasoning and practical recommendations.</p></div>
+        <div id="insights-empty" class="glass-card empty-state">
+          <span class="empty-icon" aria-hidden="true">▤</span>
+          <h3>Insights will appear here</h3>
+          <p>Go to Analyser and analyse a password to see its pattern checks, rating explanation and tailored suggestions.</p>
+          <button class="button secondary" type="button" data-go="analyser">Open Analyser</button>
+        </div>
+        <div id="insights-results" class="grid two-column" hidden>
+          <article class="glass-card"><h2><span class="heading-icon">⬡</span> Pattern Detection</h2><div id="pattern-status" class="status-banner"></div><ul id="pattern-list" class="insight-list"></ul></article>
+          <article class="glass-card"><h2><span class="heading-icon">▥</span> Why This Rating</h2><ul id="reason-list" class="insight-list"></ul></article>
+          <article class="glass-card recommendations"><h2><span class="heading-icon">✣</span> Suggestions</h2><ul id="tips-list" class="insight-list"></ul><p class="subheading">This local estimate cannot verify password reuse or check breach databases.</p></article>
+        </div>
+      </section>
+
+      <section class="page" id="page-generate" role="tabpanel" aria-labelledby="tab-generate" data-page-panel="generate" hidden>
+        <article class="glass-card generator-card">
+          <h2><span class="heading-icon">⚿</span> Strong Password Generator</h2>
+          <p class="subheading">Choose a length and the character groups to include.</p>
+          <div class="generator-options">
+            <label class="length-control" for="length-input">Length <input id="length-input" type="number" min="8" max="128" value="16" inputmode="numeric"></label>
+            <label class="check-row"><input type="checkbox" id="use-upper" checked><span>A – Z</span></label>
+            <label class="check-row"><input type="checkbox" id="use-lower" checked><span>a – z</span></label>
+            <label class="check-row"><input type="checkbox" id="use-digits" checked><span>0 – 9</span></label>
+            <label class="check-row"><input type="checkbox" id="use-symbols" checked><span>Symbols</span></label>
+          </div>
+          <div id="group-chips" class="group-chips" aria-label="Selected character groups"><span data-chip="upper">A–Z</span><span data-chip="lower">a–z</span><span data-chip="digits">0–9</span><span data-chip="symbols">Symbols</span></div>
+          <div class="generated-output"><output id="generated-password" aria-live="polite">Your generated password will appear here.</output><button id="copy-icon" class="eye-button" type="button" aria-label="Copy password" disabled>▢</button></div>
+          <p id="generator-feedback" class="subheading" aria-live="polite">Generated locally using your browser's secure random number generator.</p>
+          <div class="actions">
+            <button id="generate-button" class="button primary" type="button"><span aria-hidden="true">✣</span> Generate Password</button>
+            <button id="copy-button" class="button secondary" type="button" disabled><span aria-hidden="true">▢</span> Copy Password</button>
+            <button id="clear-generator" class="button secondary" type="button">Clear</button>
+          </div>
+        </article>
+      </section>
+    </main>
+    <footer><span class="online-dot"></span> Privacy first: analysis and generation stay on this device.</footer>
+  </div>
+</body>
+</html>

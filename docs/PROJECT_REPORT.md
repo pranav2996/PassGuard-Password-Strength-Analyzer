@@ -2,7 +2,7 @@
 
 ## 1. Abstract
 
-PassGuard is a Java Swing desktop project that locally estimates password strength and generates random password candidates. The analyzer reports a 0–7 heuristic score, a matching rating, detected simple patterns, and suggestions. Password data is not sent to a service or saved by the application. A configurable generator uses `SecureRandom` and guarantees representation of selected character groups. The project demonstrates desktop UI design, separation of logic, basic automated testing and privacy limitations. Its meter is educational and does not guarantee security.
+PassGuard is a Java Swing desktop project with a companion static web edition. Both locally estimate password strength and generate random candidates. The analyzer reports a 0–7 heuristic score, a matching rating, detected simple patterns, and suggestions. Password data is not sent to a service or saved by the application. The desktop generator uses `SecureRandom`; the browser generator uses Web Crypto. The project demonstrates desktop and web UI design, separation of logic, automated testing and privacy limitations. Its meter is educational and does not guarantee security.
 
 ## 2. Introduction
 
@@ -60,6 +60,8 @@ flowchart TD
 
 The UI obtains the input from `JPasswordField`, calls the local analysis helper, and renders returned values. The generator uses a static `SecureRandom` instance. Clipboard access is performed only by the copy button. There is no server, persistence layer or network component.
 
+The browser version is a separate, framework-free static app under `web/`. Its analysis and generator modules run in the page. The CSP in `render.yaml` disallows page network connections, form posts, third-party scripts and framing. Render serves static assets only; no backend is configured.
+
 ## 9. Module descriptions
 
 - **src/main/java/PasswordAnalyzer.java:** Main Swing window, shared hero, navigation host and privacy footer.
@@ -71,6 +73,8 @@ The UI obtains the input from `JPasswordField`, calls the local analysis helper,
 - **src/main/java/PasswordSecurity.java:** common-password list, repeated/sequential checks, score calculation, rating bands, explanatory reasons and generator.
 - **PasswordSecurityTest.java:** dependency-free automated checks for core behavior.
 - **run-tests.ps1:** compiles production and test classes into ignored `target/test-classes` and runs the test main class.
+- **web/:** responsive browser UI, shared analysis/generation logic, and Node built-in tests.
+- **render.yaml:** Render static-site configuration publishing `web/` with security headers.
 
 ## 10. Algorithm and implementation
 
@@ -94,7 +98,7 @@ The app uses a navy glassmorphism theme with a floating three-item navigation ba
 
 ## 12. Testing methodology
 
-The dependency-free test runner compiles the application logic and test source, then runs assertions without a graphical window. Cases include empty/short inputs; lower, upper, numeric, symbol-only and mixed values; a long passphrase; common, repeated and sequential patterns; score bounds and classification; suggestions; configured generator length; category requirements; invalid options; and sample variation. The UI, clipboard, and visual layout are not exercised by this automated suite.
+The dependency-free Java runner compiles the application and test source, then runs assertions without a graphical window. Its cases include empty/short inputs; character groups; a long passphrase; common, repeated and sequential patterns; score bounds and classification; suggestions; generator length and category requirements; invalid options; and sample variation. The Node built-in test suite covers corresponding web analysis and generation behavior, exactly three exclusive HTML modules, and absence of network/storage/logging calls. Static files were served locally and returned HTTP 200. Manual interaction with the browser UI, clipboard, and visual layout was blocked by desktop capture failure during this run.
 
 ## 13. Results and discussion
 

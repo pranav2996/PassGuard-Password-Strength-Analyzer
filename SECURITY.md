@@ -2,15 +2,15 @@
 
 ## Local processing and data flow
 
-Password analysis and generation run in the desktop process. PassGuard does not transmit passwords, persist them to a file, or use a backend or database. The code has no network client. Copying a generated candidate is the sole feature that deliberately places a password on an external system surface: the operating system clipboard.
+The desktop edition analyzes and generates inside the desktop process. The browser edition analyzes and generates inside the page. The web page has no backend, database, analytics, third-party scripts, or network client; its Render Content Security Policy sets `connect-src 'none'`, `form-action 'none'`, and restricts scripts to the same origin. Passwords are not placed in URLs, cookies, `localStorage`, or `sessionStorage`, and are not submitted to a server. Copying a generated candidate is the feature that deliberately places it on an external system surface: the operating system clipboard.
 
 ## Random generation
 
-The generator uses Java `SecureRandom`, requires at least one selected character group, inserts one random character from each selected group, fills the remaining length from their union, and shuffles positions. The UI allows 8–128 characters and defaults all groups on. Generation randomness is intended for candidate creation; this project has not undergone cryptographic review or formal validation against a security standard.
+The desktop generator uses Java `SecureRandom`; the browser generator uses `crypto.getRandomValues` with rejection sampling to avoid modulo bias. Both require at least one selected character group, insert one random character from each selected group, fill the remaining length from their union, and shuffle positions. The UI allows 8–128 characters and defaults all groups on. Generation randomness is intended for candidate creation; this project has not undergone cryptographic review or formal validation against a security standard.
 
 ## Password handling in memory
 
-The application reads a `char[]` from `JPasswordField` and overwrites that returned array after analysis. The analysis API currently accepts a `String`, and Swing's field and intermediate strings are immutable or managed by the UI toolkit, so reliable memory erasure cannot be promised. PassGuard does not log passwords. Do not use a real account password for demonstrations when a sample will do.
+The desktop app reads a `char[]` from `JPasswordField` and overwrites that returned array after analysis. The analysis API accepts a `String`, and Swing's field and intermediate strings are immutable or managed by the UI toolkit, so reliable memory erasure cannot be promised. In the browser, entered and generated values stay in page memory only; JavaScript strings cannot be reliably erased, and the input is cleared when requested or when the page is closed. Neither edition logs passwords. Do not use a real account password for demonstrations when a sample will do.
 
 ## Clipboard
 
