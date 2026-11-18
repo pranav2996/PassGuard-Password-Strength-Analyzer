@@ -136,7 +136,7 @@ final class ScoreBar extends JComponent {
     ScoreBar() {
         setOpaque(false);
         setPreferredSize(new Dimension(200, 12));
-        getAccessibleContext().setAccessibleName("Password strength score");
+        setToolTipText("Password strength score: not analysed");
         timer = new Timer(16, null);
         timer.addActionListener(event -> {
             float difference = target - shown;
@@ -151,7 +151,7 @@ final class ScoreBar extends JComponent {
     void setScore(int score, Color color) {
         target = Math.max(0, Math.min(7, score)) / 7f;
         accent = color;
-        getAccessibleContext().setAccessibleDescription(score + " of 7");
+        setToolTipText("Password strength score: " + score + " of 7");
         timer.start();
     }
 
