@@ -2,10 +2,7 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.awt.datatransfer.StringSelection;
-import java.security.SecureRandom;
 import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
 
 public class PasswordAnalyzer {
 
@@ -25,94 +22,23 @@ public class PasswordAnalyzer {
 
     private static final Font FONT = new Font("Segoe UI", Font.PLAIN, 14);
     private static final Font FONT_BOLD = new Font("Segoe UI", Font.BOLD, 14);
-    private static final SecureRandom random = new SecureRandom();
 
-    // -------------------- PASSWORD LOGIC (UNCHANGED) --------------------
+    // Compatibility entry point for the original fixed-length generator.
 
     public static String generatePassword() {
-        String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        String lower = "abcdefghijklmnopqrstuvwxyz";
-        String digits = "0123456789";
-        String special = "!@#$%^&*";
-        String all = upper + lower + digits + special;
-
-        StringBuilder password = new StringBuilder();
-        password.append(upper.charAt(random.nextInt(upper.length())));
-        password.append(lower.charAt(random.nextInt(lower.length())));
-        password.append(digits.charAt(random.nextInt(digits.length())));
-        password.append(special.charAt(random.nextInt(special.length())));
-
-        for (int i = 4; i < 16; i++) {
-            password.append(all.charAt(random.nextInt(all.length())));
-        }
-
-        char[] chars = password.toString().toCharArray();
-        for (int i = chars.length - 1; i > 0; i--) {
-            int j = random.nextInt(i + 1);
-            char temp = chars[i];
-            chars[i] = chars[j];
-            chars[j] = temp;
-        }
-        return new String(chars);
+        return PasswordSecurity.generatePassword(16, true, true, true, true);
     }
 
     public static boolean isCommonPassword(String password) {
-        Set<String> common = new HashSet<>();
-        common.add("password");
-        common.add("123456");
-        common.add("12345678");
-        common.add("qwerty");
-        common.add("admin");
-        common.add("password123");
-        common.add("welcome");
-        common.add("iloveyou");
-        return common.contains(password.toLowerCase());
+        return PasswordSecurity.isCommonPassword(password);
     }
 
     public static boolean hasRepeatedCharacters(String password) {
-        for (int i = 0; i < password.length() - 3; i++) {
-            if (password.charAt(i) == password.charAt(i + 1)
-                    && password.charAt(i) == password.charAt(i + 2)
-                    && password.charAt(i) == password.charAt(i + 3)) {
-                return true;
-            }
-        }
-        return false;
+        return PasswordSecurity.hasRepeatedCharacters(password);
     }
 
     public static boolean hasSequentialPattern(String password) {
-        for (int i = 0; i < password.length() - 3; i++) {
-            char a = password.charAt(i);
-            char b = password.charAt(i + 1);
-            char c = password.charAt(i + 2);
-            char d = password.charAt(i + 3);
-
-            if (b == a + 1 && c == b + 1 && d == c + 1) {
-                return true;
-            }
-            if (b == a - 1 && c == b - 1 && d == c - 1) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    public static String generateTips(boolean length, boolean upper,
-                                       boolean lower, boolean digit,
-                                       boolean special, int score) {
-        StringBuilder tips = new StringBuilder();
-
-        if (!length) tips.append("• Use at least 8 characters.\n");
-        if (!upper) tips.append("• Add an uppercase letter.\n");
-        if (!lower) tips.append("• Add a lowercase letter.\n");
-        if (!digit) tips.append("• Include a number.\n");
-        if (!special) tips.append("• Include a special character.\n");
-        if (score < 6) tips.append("• Try using a longer password (12+ characters).\n");
-
-        if (tips.length() == 0) {
-            tips.append("Great! Your password meets all the basic checks.");
-        }
-        return tips.toString();
+        return PasswordSecurity.hasSequentialPattern(password);
     }
 
     // -------------------- UI HELPERS --------------------
@@ -230,7 +156,7 @@ public class PasswordAnalyzer {
             JFrame frame = new JFrame("PassGuard | Password Strength Analyzer");
             frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             frame.setSize(1120, 900);
-            frame.setMinimumSize(new Dimension(900, 700));
+            frame.setMinimumSize(new Dimension(720, 620));
             frame.getContentPane().setBackground(BACKGROUND);
 
             JPanel page = new JPanel(new BorderLayout(0, 22));
@@ -357,7 +283,7 @@ public class PasswordAnalyzer {
             progressBar.setAlignmentX(Component.LEFT_ALIGNMENT);
             resultCard.add(progressBar);
             resultCard.add(Box.createVerticalStrut(8));
-            resultCard.add(mutedText("Score is based on length and character variety.", 11));
+            resultCard.add(mutedText("An educational estimate based on length, variety and patterns.", 11));
 
             // Checklist card
             RoundedPanel checklistCard = createCard(
@@ -415,17 +341,40 @@ public class PasswordAnalyzer {
             // Generator card
             RoundedPanel generatorCard = createCard(
                     "Strong password generator",
-                    "Create a random 16-character password.");
+                    "Choose a length and the character groups to include.");
 
-            JLabel generatedLabel = new JLabel(
-                    "Your generated password will appear here.");
+            JPanel generatorOptions = transparentPanel(new FlowLayout(FlowLayout.LEFT, 7, 0));
+            generatorOptions.setAlignmentX(Component.LEFT_ALIGNMENT);
+            JSpinner lengthSpinner = new JSpinner(new SpinnerNumberModel(16, 8, 128, 1));
+            generatorOptions.add(mutedText("Length", 12));
+            generatorOptions.add(lengthSpinner);
+            JCheckBox upperOption = new JCheckBox("A–Z", true);
+            JCheckBox lowerOption = new JCheckBox("a–z", true);
+            JCheckBox digitOption = new JCheckBox("0–9", true);
+            JCheckBox specialOption = new JCheckBox("Symbols", true);
+            for (JCheckBox option : new JCheckBox[]{upperOption, lowerOption, digitOption, specialOption}) {
+                option.setForeground(MUTED);
+                option.setBackground(CARD);
+                option.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+                option.setFocusPainted(false);
+                generatorOptions.add(option);
+            }
+            generatorCard.add(generatorOptions);
+            generatorCard.add(Box.createVerticalStrut(12));
+
+            JTextField generatedLabel = new JTextField(
+                    "Generate a password to preview it here.");
             generatedLabel.setFont(new Font("Consolas", Font.BOLD, 14));
             generatedLabel.setForeground(GREEN);
             generatedLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-            generatedLabel.setBorder(new EmptyBorder(12, 12, 12, 12));
+            generatedLabel.setBorder(BorderFactory.createCompoundBorder(
+                    BorderFactory.createLineBorder(BORDER, 1),
+                    new EmptyBorder(12, 12, 12, 12)));
+            generatedLabel.setEditable(false);
+            generatedLabel.setFocusable(false);
             generatedLabel.setOpaque(true);
             generatedLabel.setBackground(CARD_LIGHT);
-            generatedLabel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 54));
+            generatedLabel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50));
             generatorCard.add(generatedLabel);
             generatorCard.add(Box.createVerticalStrut(14));
 
@@ -435,35 +384,46 @@ public class PasswordAnalyzer {
             ModernButton generateButton = new ModernButton(
                     "Generate password", GREEN.darker());
             ModernButton copyButton = new ModernButton("Copy password", BLUE);
+            copyButton.setEnabled(false);
             generatorButtons.add(generateButton);
             generatorButtons.add(copyButton);
             generatorCard.add(generatorButtons);
+            JLabel clipboardFeedback = mutedText("", 11);
+            generatorCard.add(Box.createVerticalStrut(8));
+            generatorCard.add(clipboardFeedback);
 
             final String[] generatedPassword = {""};
 
             generateButton.addActionListener(e -> {
-                generatedPassword[0] = generatePassword();
-                generatedLabel.setText(generatedPassword[0]);
+                try {
+                    generatedPassword[0] = PasswordSecurity.generatePassword(
+                            (Integer) lengthSpinner.getValue(), upperOption.isSelected(),
+                            lowerOption.isSelected(), digitOption.isSelected(), specialOption.isSelected());
+                    generatedLabel.setText(generatedPassword[0]);
+                    copyButton.setEnabled(true);
+                    clipboardFeedback.setText("Generated locally.");
+                } catch (IllegalArgumentException ex) {
+                    generatedPassword[0] = "";
+                    generatedLabel.setText("Select at least one character group.");
+                    copyButton.setEnabled(false);
+                    clipboardFeedback.setText(ex.getMessage());
+                }
             });
 
             copyButton.addActionListener(e -> {
                 if (!generatedPassword[0].isEmpty()) {
                     StringSelection selection =
                             new StringSelection(generatedPassword[0]);
-                    Toolkit.getDefaultToolkit()
-                            .getSystemClipboard()
-                            .setContents(selection, null);
-                    JOptionPane.showMessageDialog(
-                            frame,
-                            "Generated password copied!",
-                            "PassGuard",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    try {
+                        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(selection, null);
+                        clipboardFeedback.setText("Copied. The system clipboard may retain it until replaced.");
+                    } catch (HeadlessException | IllegalStateException ex) {
+                        clipboardFeedback.setText("Clipboard is unavailable or busy.");
+                    } catch (SecurityException ex) {
+                        clipboardFeedback.setText("Clipboard access was denied.");
+                    }
                 } else {
-                    JOptionPane.showMessageDialog(
-                            frame,
-                            "Generate a password first!",
-                            "PassGuard",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    clipboardFeedback.setText("Generate a password first.");
                 }
             });
 
@@ -527,57 +487,33 @@ public class PasswordAnalyzer {
             frame.getRootPane().setBorder(null);
             frame.setLocationRelativeTo(null);
 
-            // -------------------- ANALYZE BUTTON (LOGIC UNCHANGED) --------------------
+            // -------------------- ANALYZE BUTTON --------------------
 
             analyzeButton.addActionListener(e -> {
                 char[] enteredChars = passwordField.getPassword();
 
                 if (enteredChars.length == 0) {
-                    JOptionPane.showMessageDialog(
-                            frame,
-                            "Please enter a password first!",
-                            "PassGuard",
-                            JOptionPane.WARNING_MESSAGE);
+                    resultLabel.setText("Enter a password");
+                    resultLabel.setForeground(ORANGE);
+                    scoreLabel.setText("SCORE  •  0 / 7");
+                    progressBar.setValue(0);
+                    progressBar.setForeground(BLUE);
+                    warningLabel.setText(" ");
+                    tipsArea.setText("Enter a password to see its local estimate and suggestions.");
+                    for (JLabel label : checklist) {
+                        label.setText("○   " + label.getText().substring(3));
+                        label.setForeground(MUTED);
+                    }
                     return;
                 }
-
-                String password = new String(enteredChars);
-                Arrays.fill(enteredChars, '\0');
-
-                int score = 0;
-
-                boolean length = password.length() >= 8;
-                boolean upper = password.matches(".*[A-Z].*");
-                boolean lower = password.matches(".*[a-z].*");
-                boolean digit = password.matches(".*[0-9].*");
-                boolean special = password.matches(".*[^a-zA-Z0-9].*");
-
-                if (length) score++;
-                if (upper) score++;
-                if (lower) score++;
-                if (digit) score++;
-                if (special) score++;
-
-                if (password.length() >= 12) score++;
-                if (password.length() >= 16) score++;
-
-                boolean common = isCommonPassword(password);
-                boolean repeated = hasRepeatedCharacters(password);
-                boolean sequential = hasSequentialPattern(password);
-
-                String strength;
-
-                if (common || repeated || sequential) {
-                    strength = "Weak";
-                } else if (score <= 1) {
-                    strength = "Weak";
-                } else if (score <= 3) {
-                    strength = "Medium";
-                } else if (score <= 5) {
-                    strength = "Strong";
-                } else {
-                    strength = "Very Strong";
+                PasswordSecurity.Analysis analysis;
+                try {
+                    analysis = PasswordSecurity.analyze(new String(enteredChars));
+                } finally {
+                    Arrays.fill(enteredChars, '\0');
                 }
+                int score = analysis.score;
+                String strength = analysis.strength;
 
                 resultLabel.setText(strength);
                 scoreLabel.setText("SCORE  •  " + score + " / 7");
@@ -586,7 +522,7 @@ public class PasswordAnalyzer {
                 if (strength.equals("Weak")) {
                     resultLabel.setForeground(RED);
                     progressBar.setForeground(RED);
-                } else if (strength.equals("Medium")) {
+                } else if (strength.equals("Moderate")) {
                     resultLabel.setForeground(ORANGE);
                     progressBar.setForeground(ORANGE);
                 } else {
@@ -594,7 +530,7 @@ public class PasswordAnalyzer {
                     progressBar.setForeground(GREEN);
                 }
 
-                boolean[] checks = {length, upper, lower, digit, special};
+                boolean[] checks = {analysis.length8, analysis.upper, analysis.lower, analysis.digit, analysis.special};
 
                 for (int i = 0; i < checklist.length; i++) {
                     String text = checklist[i].getText().substring(3);
@@ -607,22 +543,17 @@ public class PasswordAnalyzer {
                     }
                 }
 
-                warningLabel.setText(" ");
-                if (common) {
-                    warningLabel.setText("Warning: This is a common password!");
-                } else if (repeated) {
-                    warningLabel.setText("Warning: Repeated characters detected!");
-                } else if (sequential) {
-                    warningLabel.setText("Warning: Sequential pattern detected!");
-                }
-
-                tipsArea.setText(generateTips(
-                        length, upper, lower, digit, special, score));
-
-                if (common || repeated || sequential) {
-                    tipsArea.append(
-                            "\n• Avoid common words, repeated characters, and sequences.");
-                }
+                java.util.List<String> warnings = new java.util.ArrayList<>();
+                if (analysis.common) warnings.add("Common password");
+                if (analysis.repeated) warnings.add("Repeated characters");
+                if (analysis.sequential) warnings.add("Sequential pattern");
+                warningLabel.setText(warnings.isEmpty() ? "No listed pattern detected" : "Warning: " + String.join(" · ", warnings));
+                warningLabel.setForeground(warnings.isEmpty() ? GREEN : RED);
+                StringBuilder explanation = new StringBuilder("Why this rating:\n");
+                for (String reason : analysis.reasons) explanation.append("• ").append(reason).append('\n');
+                explanation.append("\nSuggestions:\n");
+                for (String tip : analysis.tips) explanation.append("• ").append(tip).append('\n');
+                tipsArea.setText(explanation.toString());
             });
 
             // -------------------- CLEAR BUTTON (LOGIC UNCHANGED) --------------------
@@ -650,8 +581,9 @@ public class PasswordAnalyzer {
                 }
 
                 generatedPassword[0] = "";
-                generatedLabel.setText(
-                        "Your generated password will appear here.");
+                generatedLabel.setText("Generate a password to preview it here.");
+                copyButton.setEnabled(false);
+                clipboardFeedback.setText("");
             });
 
             frame.setVisible(true);
