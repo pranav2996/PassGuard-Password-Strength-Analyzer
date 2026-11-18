@@ -62,7 +62,12 @@ The UI obtains the input from `JPasswordField`, calls the local analysis helper,
 
 ## 9. Module descriptions
 
-- **src/main/java/PasswordAnalyzer.java:** Swing window, dark navy cards, input controls, result display, checklist, suggestions, generator controls, copy feedback and reset behavior.
+- **src/main/java/PasswordAnalyzer.java:** Main Swing window, shared hero, navigation host and privacy footer.
+- **src/main/java/AnalyzerPage.java:** Password input, show/hide, analysis action, score meter and checklist.
+- **src/main/java/InsightsPage.java:** Analysis-specific pattern findings, score explanation, recommendations and empty state.
+- **src/main/java/GeneratorPage.java:** Length and category options, local candidate display, generation, copy and reset behavior.
+- **src/main/java/NavigationBar.java:** Exactly three page controls, responsive page layout and fade transition.
+- **src/main/java/AnimatedBackground.java** and **GlassUI.java:** Java2D wave/particle background and reusable glass cards, buttons, icons and styling.
 - **src/main/java/PasswordSecurity.java:** common-password list, repeated/sequential checks, score calculation, rating bands, explanatory reasons and generator.
 - **PasswordSecurityTest.java:** dependency-free automated checks for core behavior.
 - **run-tests.ps1:** compiles production and test classes into ignored `target/test-classes` and runs the test main class.
@@ -85,7 +90,7 @@ Suggestions encourage at least 12 characters, uniqueness, and avoiding matched p
 
 ## 11. User interface description
 
-The application retains its dark navy dashboard, two-column card layout, green local-analysis indicator, masked input, strength progress bar, checklist, scrollable insights and generator area. The generator now includes a length spinner and four optional category controls. The main window can be resized down to 720 by 620 pixels and the page scrolls when its contents exceed the available viewport. Clipboard feedback is shown inline. The UI has not been manually exercised on multiple operating systems or screen sizes as part of this code review.
+The app uses a navy glassmorphism theme with a floating three-item navigation bar and custom animated cyan/violet waves. The Analyser page exclusively contains the masked input, score meter and five-point checklist. Insights exclusively presents analysis findings and recommendations, with an empty state before analysis. Generate exclusively contains length and category controls, password preview and copy/reset actions. Pages use separate Swing components within a `CardLayout`; analysis state is passed to Insights and retained on page switches. Layouts adapt to narrower widths and use vertical scrolling where page content needs it. Clipboard feedback remains inline.
 
 ## 12. Testing methodology
 

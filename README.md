@@ -30,11 +30,15 @@ The original implementation combined Swing UI and analysis logic in one class, u
 - Swing and AWT; no runtime libraries, server, database or network access.
 - PowerShell on Windows for the included test runner, or equivalent `javac`/`java` commands.
 
-## Architecture
+## Three-page interface and architecture
+
+The floating navigation contains exactly **Analyser**, **Insights** and **Generate**. Each is a separate Swing page hosted by `CardLayout`: analysis entry, score and checklist live only in Analyser; explanation, pattern findings and recommendations live only in Insights; configurable local generation lives only in Generate. Analysis results remain available when switching pages. Insights starts with an instructional empty state.
+
+The interface uses custom Java2D glass cards and buttons over an animated navy background with flowing cyan/violet waves and particles. A Swing timer drives the animation and pauses when the background is not showing.
 
 ```mermaid
 flowchart LR
-    User[User] --> UI[Java Swing interface]
+    User[User] --> UI[Three-page Java Swing interface]
     UI --> Core[PasswordSecurity]
     Core --> Analyze[Local heuristic analysis]
     Core --> Generate[SecureRandom generator]
@@ -55,6 +59,12 @@ This simple heuristic is deliberately explainable. It does not estimate cracking
 PassGuard/
 ├── src/main/java/
 │   ├── PasswordAnalyzer.java
+│   ├── AnalyzerPage.java
+│   ├── InsightsPage.java
+│   ├── GeneratorPage.java
+│   ├── NavigationBar.java
+│   ├── AnimatedBackground.java
+│   ├── GlassUI.java
 │   └── PasswordSecurity.java
 ├── src/test/java/
 │   └── PasswordSecurityTest.java
@@ -68,18 +78,12 @@ PassGuard/
 
 ## Build and run
 
-Install a JDK 17 or later, then from the repository root run:
-
-```powershell
-javac --release 17 -encoding UTF-8 src\main\java\PasswordSecurity.java src\main\java\PasswordAnalyzer.java
-java -cp src\main\java PasswordAnalyzer
-```
-
-The first command places `.class` files beside the sources; `.gitignore` excludes them. Alternatively, compile to a separate output directory:
+Install a JDK 17 or later, then from the repository root run in PowerShell:
 
 ```powershell
 New-Item -ItemType Directory -Force target\classes
-javac --release 17 -encoding UTF-8 -d target\classes src\main\java\PasswordSecurity.java src\main\java\PasswordAnalyzer.java
+$sources = Get-ChildItem src\main\java -Filter '*.java' | ForEach-Object FullName
+javac --release 17 -encoding UTF-8 -d target\classes $sources
 java -cp target\classes PasswordAnalyzer
 ```
 
